@@ -2,6 +2,62 @@
   <div id="map" />
 </template>
 
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+
+  ::-webkit-scrollbar {
+  width: 10px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: var(--bg-color1);
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #2c2c2b;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #2c2c2b;
+}
+
+  :root {
+    --bg-color1: #060606; /* 78% blur 5.5px */
+  }
+  
+  #map {
+    height: 100vh;
+  }
+  .m {
+    margin: 0 0 0 0;
+  }
+  .a {
+    width: 10rem;
+    height: 10rem;
+  }  
+  
+  .mapboxgl-popup-content{
+    background-color: var(--bg-color1);
+  }
+  .mapboxgl-popup-tip {
+    border-top-color: var(--bg-color1) !important; 
+  }
+  .mapboxgl-popup-close-button {
+    filter: invert(1);
+   }
+  .piss {
+    color: #fff;
+    font-family: 'Montserrat', sans-serif;
+    font-size: x-large;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  /* # mapboxgl-popup mapboxgl-popup-anchor-bottom */
+  </style>
+
 <script>
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -18,7 +74,7 @@ export default {
         "pk.eyJ1IjoibWlrZWhhbWlsdG9uMDAiLCJhIjoiNDVjS2puUSJ9.aLvWM5BnllUGJ0e6nwMSEg";
       const map = new mapboxgl.Map({
         container: "map",
-        style: "mapbox://styles/mapbox/streets-v11",
+        style: "mapbox://styles/mapbox/dark-v10",
         center: [15.77659, 50.03075],
         zoom: 13,
       });
@@ -158,7 +214,7 @@ export default {
       map.on("click", "earthquakes-point", (e) => {
         new mapboxgl.Popup()
         .setLngLat(e.features[0].geometry.coordinates)
-        .setHTML(`<div class="a"></div>`)
+        .setHTML(`<div class="a"><p class="piss">Lorem ipsum ${2 + 3}</p></div>`)
         .addTo(map);
       })
 
@@ -181,15 +237,3 @@ export default {
 };
 </script>
 
-<style>
-#map {
-  height: 100vh;
-}
-.m {
-  margin: 0 0 0 0;
-}
-.a {
-  width: 10rem;
-  height: 10rem;
-}
-</style>
