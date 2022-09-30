@@ -116,7 +116,7 @@ export default {
           },
           'waterway-label'
         );
-
+        //console.log(baseZoom, baseWidth)
         map.addLayer({
             'id': 'earthquakes-point',
             'type': 'circle',
@@ -125,37 +125,16 @@ export default {
             'paint': {
               // Size circle radius by earthquake magnitude and zoom level
               'circle-radius': [
-                'interpolate',
-                ['linear'],
+                'interpolate', 
+                ['exponential', 2], 
                 ['zoom'],
-                11,
-                ['interpolate', ['linear'],
-                  ['get', 'mag'], 1, 1, 6, 4
-                ],
-                16,
-                ['interpolate', ['linear'],
-                  ['get', 'mag'], 1, 5, 6, 50
-                ]
+                10, ["*", 10, ["^", 2, -6]], 
+                24, ["*", 24, ["^", 2, 8]]
               ],
               // Color circle by earthquake magnitude
-              'circle-color': [
-                'interpolate',
-                ['linear'],
-                ['get', 'mag'],
-                1,
-                'rgba(33,102,172,0)',
-                2,
-                'rgb(103,169,207)',
-                3,
-                'rgb(209,229,240)',
-                4,
-                'rgb(253,219,199)',
-                5,
-                'rgb(239,138,98)',
-                6,
-                'rgb(178,24,43)'
-              ],
-              'circle-stroke-color': 'white',
+              'circle-color': "rgba(205, 4, 4, 0.37)",
+              'circle-stroke-color': 'rgba(119, 0, 0, 0.73)',
+              //"circle-blur": 10,
               'circle-stroke-width': 1,
               // Transition from heatmap to circle layer by zoom level
               'circle-opacity': [
@@ -175,6 +154,14 @@ export default {
 
 
       });
+
+      map.on("click", "earthquakes-point", (e) => {
+        new mapboxgl.Popup()
+        .setLngLat(e.features[0].geometry.coordinates)
+        .setHTML(`<div class="a"></div>`)
+        .addTo(map);
+      })
+
       map.addControl(
         new MapboxGeocoder({
           accessToken: mapboxgl.accessToken,
@@ -200,5 +187,9 @@ export default {
 }
 .m {
   margin: 0 0 0 0;
+}
+.a {
+  width: 10rem;
+  height: 10rem;
 }
 </style>
