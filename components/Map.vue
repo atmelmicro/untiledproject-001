@@ -5,19 +5,25 @@
 <script>
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+//import { useCounterStore } from '../stores/mapdata'
 import {
   onMounted
 } from "vue";
+
+import { mapMutations } from 'vuex'
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
-
+let map;
+let marker;
+import { state, coords } from "../store/index"
+import { off } from "process";
 export default {
     name: "Map",
   setup() {
     onMounted(() => {
       mapboxgl.accessToken =
         "pk.eyJ1IjoibWlrZWhhbWlsdG9uMDAiLCJhIjoiNDVjS2puUSJ9.aLvWM5BnllUGJ0e6nwMSEg";
-      const map = new mapboxgl.Map({
+      map = new mapboxgl.Map({
         container: "map",
         style: "mapbox://styles/mapbox/dark-v10",
         center: [15.77659, 50.03075],
@@ -150,9 +156,6 @@ export default {
           },
           'waterway-label'
         );
-
-
-
       });
 
       map.on("click", "earthquakes-point", (e) => {
@@ -161,23 +164,88 @@ export default {
         .setHTML(`<div class="a"></div>`)
         .addTo(map);
       })
+      const geocoder = new MapboxGeocoder({
+        accessToken: mapboxgl.accessToken,
+        mapboxgl: mapboxgl,
+        bbox: [15.74339523320742, 50.01445573223078, 15.832487162023604, 50.05970182805093],
+        proximity: { //[, ]
+          longitude: 50.03075,
+          latitude: 15.77659
+        },
+        language: "cs"
+      })
 
       map.addControl(
-        new MapboxGeocoder({
-            accessToken: mapboxgl.accessToken,
-            mapboxgl: mapboxgl,
-            bbox: [15.74339523320742, 50.01445573223078, 15.832487162023604, 50.05970182805093],
-            proximity: { //[, ]
-                longitude: 50.03075,
-                latitude: 15.77659
-            },
-            language: "cs"
-        }), "top-left"
+        geocoder, "top-left"
       );
-
+      
+      geocoder.on("result", (e) => {
+        let finalarr = []
+        state.resultOfSub = {}
+        let coords = e.result.geometry.coordinates
+        state.result = e.result
+        let promisesArr = []
+        let cats = ["resta", "bar", "divadlo", "hotel"]
+        for (const i of cats) {
+          promisesArr.push(fetch(`https://api.mapbox.com/search/v1/suggest/${i}?access_token=pk.eyJ1Ijoic2VhcmNoLW1hY2hpbmUtdXNlci0xIiwiYSI6ImNrNnJ6bDdzdzA5cnAza3F4aTVwcWxqdWEifQ.RFF7CVFKrUsZVrJsFzhRvQ&session_token=1e5917d8-a616-468e-982d-b93879edd719&language=cs&limit=10&types=country%2Cregion%2Cdistrict%2Cpostcode%2Clocality%2Cplace%2Cneighborhood%2Caddress%2Cpoi%2Cstreet%2Ccategory&proximity=${coords[0]}%2C${coords[1]}&bbox=${(coords[0] - 0.002).toFixed(10)},${(coords[1] - 0.002).toFixed(10)},${(coords[0] + 0.002).toFixed(10)},${(coords[1] + 0.002).toFixed(10) }`))
+        }
+        Promise.all(promisesArr).then( async (e) => {
+          for (const o of e) {
+            let json = await o.json()
+            finalarr = finalarr.concat(json.suggestions)
+          }
+          state.arr = finalarr
+        })
+        //console.log(state)
+      })
 
     });
     return {};
+  },
+  data () {
+    return {
+      coords
+    }
+  },
+  watch: {
+    coords: {
+      handler(newValue, oldValue) {
+        if(newValue.coord.length == 0) {
+          marker.remove()
+          marker = undefined
+
+          map.flyTo({
+              center: state.result.geometry.coordinates,
+              essential: true,
+              duration: 400 
+            })
+
+          return
+        } else if (!marker) {
+          marker = new mapboxgl.Marker()
+            .setLngLat(newValue.coord)
+            .addTo(map);
+        } else {
+          marker.setLngLat(newValue.coord)
+          marker.remove()
+        }
+        map.flyTo({
+              center: newValue.coord,
+              essential: true,
+              duration: 400 
+            })
+      },
+      deep: true
+    }
+  },
+  methods: {
+    addTodo (e) {
+      this.$store.commit('todos/add', e.target.value)
+      e.target.value = ''
+    },
+    ...mapMutations({
+      toggle: 'todos/toggle'
+    })
   },
   head: {
     bodyAttrs: {
@@ -204,4 +272,11 @@ export default {
 .mapboxgl-ctrl-geocoder--input {
     outline: 0;
 }
+.mapboxgl-marker svg path {
+    fill: aliceblue;
+}
+.mapboxgl-marker svg circle {
+    fill: black
+    ;
+} 
 </style>

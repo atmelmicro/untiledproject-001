@@ -18,4 +18,8 @@ export default Vue.extend({
     color: white;
     font-family: 'Montserrat', sans-serif;
   }
+  input, input:active, input:focus {
+    outline: none;
+    -webkit-tap-highlight-color: none;
+  }
 </style>

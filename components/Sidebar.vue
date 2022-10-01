@@ -2,34 +2,254 @@
 <template>
     <div id="sidebar" :class="{extend: extend}">
         <div id="top">
-            <h2 id="name">untitled project 001</h2>
-            <audio id="audio" src="helicopter.mp3"></audio>
-        </div>
-        <div id="bottom">
-            <button id="about" @click="bruh">
-                Co to kurva je?
+            <h2 id="name">PCEGuard</h2>
+                <div v-if="Object.keys(state.resultOfSub).length !== 0" class="place">
+                    <h1 id="place-name" class="place-text">{{state.resultOfSub.matching_place_name}}</h1>
+                    <h2 id="place-safety" class="place-text">v <span style="color: lightgreen">bezpečné zóně</span></h2>
+                </div>
+
+                <div id="places" v-else-if="Object.keys(state.arr).length !== 0">
+                    <div style="margin-left: 1rem; margin-right: 1rem; margin-bottom: 4rem;">
+                        <h1 class="place-text">{{state.result.text_cs}}</h1>
+                        <h3 id="place-address" class="place-text">{{state.result.properties.address}}</h3>
+                        <h2 id="bezp-zona">Bezpečná zóna</h2>
+                        <h3 id="zajimave">Zajímavé místa kolem</h3>
+                        <div id="spacer"></div>
+                        <div v-for="(i, index) in state.arr" v-if="i.description != 'Category'">
+                            <a @click="aaa"><h3 :id="i.description" class="places-name place- text">{{i.feature_name}}</h3></a>
+                            <p id="places-desc" class="place-text">{{i.description}}</p>
+                        </div>
+                    </div>
+                </div>
+                    
+            <div v-else>
+                <div v-if="extend" id="about-div">
+                    <h1>ffsdfs</h1>
+                    <p>AAAAAAAGDGHFQWPGHQ29GHQ9G</p>
+                    <h1>dsfhouahoigfqoiětnoě</h1>
+                    <p>hoiušrtěbvtěuibšbilufebiufwhiouefrbuiefwbiufwebiuwegiublefwb</p>
+                </div>
+                <div v-else >
+                    <div class="time-wrapper">
+                        <h3>Od</h3>
+                        <input type="date" min="2021-01-01" max="2021-12-31" id="date">
+                        <div class="time" :class="odErrFunc()">
+                            <h1>{{od}}:</h1>
+                            <h2>00</h2>
+                        </div>
+                    </div>
+                    <input type="range" class="time-slider" @input="(e) => {od = Number(e.target.value)}" min="0" max="24" :value="od">
+                    <div class="time-wrapper">
+                        <h3>Do</h3>
+                        <div class="time" :class="odErrFunc()">
+                            <h1>{{doh}}:</h1>
+                            <h2>00</h2>
+                        </div>
+                    </div>
+                    <input type="range" class="time-slider" @input="(e) => {doh = Number(e.target.value)}" min="0" max="24" :value="doh">
+                </div>
+            </div>
+                
+            </div>
+            <div id="bottom">
+                <button id="about" @click="bruh">
+                {{
+                    Object.keys(state.resultOfSub).length === 0 && Object.keys(state.arr).length === 0 ?
+                    extend ? "Zavřit" : "Co to je?" :
+                    "Zavřít"
+                    }}
             </button>
         </div>
-    </div>
+        </div>
   </template>
   
+
   <script>
+import { onMounted } from 'vue';
+import { state, coords } from "../store/index"
+const zeroPad = (num) => {
+        if(num < 10 ) {
+            return String(num).padStart(2, '0')
+        } else {
+            return num
+        }
+    }
   export default {
     name: 'Sidebar',
     data () {
         return {
-            extend: false
+            extend: false,
+            doErr: false,
+            odErr: false,
+            od: 0,
+            doh: 0,
+            place: true,
+            state,
+            coords
         } 
     },
     methods: {
         bruh() {
-            this.extend = !this.extend// let myAudio = document.querySelector('#audio'); myAudio.play()
-        }
+            if(Object.keys(state.resultOfSub).length === 0 && Object.keys(state.arr).length === 0) {
+                this.extend = !this.extend// let myAudio = document.querySelector('#audio'); myAudio.play()
+                return
+            } else if (Object.keys(state.resultOfSub).length !== 0) {
+                state.resultOfSub = {}
+                coords.coord = []
+            } else {
+                state.result = {}
+                state.arr = []
+                console.log("e")
+                let butt = document.getElementsByClassName("mapboxgl-ctrl-geocoder--button")[0]
+                butt.click()
+            }
+        },
+        set(e) {
+            this.time = e.target.value
+        },
+        odErrFunc() {
+            return this.od > this.doh ? "orange" : ""
+        },
+        getDate() {
+            let date = new Date
+            date.setFullYear(2021)
+            console.log(`${date.getFullYear}-${date.getMonth}-${date.getDay}`)
+            return `${date.getFullYear}-${date.getMonth}-${date.getDay}`
+        },
+        aaa(e) {
+            let adresa = e.target.parentElement.parentElement.childNodes[2].innerHTML
+            fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(adresa)}.json?country=cz&bbox=15.74339523320742%2C-50.01445573223078%2C50.01445573223078%2C50.05970182805093&types=place%2Cpostcode%2Caddress&access_token=pk.eyJ1Ijoic2VhcmNoLW1hY2hpbmUtdXNlci0xIiwiYSI6ImNrNnJ6bDdzdzA5cnAza3F4aTVwcWxqdWEifQ.RFF7CVFKrUsZVrJsFzhRvQ`)
+                .then(async (e) => {
+                    let json = await e.json()
+                    console.log(json.features[0].geometry.coordinates)
+                    coords.coord = json.features[0].geometry.coordinates
+                    console.log(json.features[0])
+                    state.resultOfSub = json.features[0]
+                })
+        } 
+    },
+    mounted () {        
+        let dateSelector = document.getElementById("date")
+        let date = new Date
+        console.log(date.getMonth())
+        date.setFullYear(2021)
+        let formattedDate = `${date.getFullYear()}-${zeroPad(date.getMonth() + 1)}-${zeroPad(date.getDate())}`
+        console.log(formattedDate)
+        //dateSelector.value = formattedDate
     }
   }
   </script>
   
   <style>
+    #place-name {
+        font-size: 2rem;
+    }
+    #spacer {
+        width: 100%;
+
+        background-color: #4b4b4b;
+        height: 0.2rem;
+    }
+
+    #zajimave {
+        font-weight: 500;
+    }
+    #bezp-zona {
+        font-weight: 500;
+        color: #C5FFB0;
+    }  
+    .places-name {
+        margin-top: 1rem !important;
+        font-weight: 500 !important;
+    }
+
+    #places-desc {
+        margin-top: 0;
+        margin-bottom: 1rem;
+    }
+
+    #places {
+        overflow-y: auto;
+    }
+
+    .place-text {
+        font-weight: 400;
+        margin: 0 0 0 0;
+    }
+
+    .place {
+        padding-left: 1rem;
+    }
+
+    #place-address {
+        padding-bottom: 1rem;
+    }
+    #place-safety {
+        padding-top: 1rem;
+    }
+    #date {
+        background-color: rgba(0, 0, 0, 0);
+        outline: none;
+        color: white;
+        width: 9rem;
+        border: none;
+        font-family: 'Montserrat', sans-serif;
+        padding-left: 1rem;
+        font-size: 1rem;
+        font-weight: 500;
+    }
+    .orange {
+        color: orange;
+    }
+    .time-wrapper {
+        display: flex;
+        flex-direction: column;
+        margin-top: 1rem;
+    }
+    .time-wrapper h3 {
+        margin: 0 0 0 0;
+        margin-left: 1rem;
+        color: rgba(255, 255, 255, 0.449);
+    }
+    #normal-sidebar {
+        flex-direction: column;
+        margin-left: 1rem;
+    }
+    #about-div {
+        margin-left: 1rem;
+    }
+    .time-slider {
+        appearance: none;
+        width: 100%;
+        height: 10px;
+        background: rgba(0, 0, 0, 0.28);
+        outline: none;
+        margin: 0 0 0 0;
+        margin-left: 0 !important;
+    }
+    .time-slider::-webkit-slider-thumb {
+        -webkit-appearance: none; /* Override default look */
+        appearance: none;
+        width: 25px; /* Set a specific slider handle width */
+        height: 10px; /* Slider handle height */
+        background: white; /* Green background */
+        cursor: pointer; /* Cursor on hover */
+    }
+
+    .time {
+        display: flex;
+        flex-direction: row;
+        margin-left: 1rem;
+        align-items: flex-end;
+    }
+    .time h2 {
+        margin-bottom: 0.1rem;
+        margin-top: 0;
+    }
+    .time h1 {
+        margin-bottom: 0rem;
+        margin-top: 0;
+    }
     #sidebar {
       width: 20%;
       height: 100vh;
@@ -43,7 +263,13 @@
       justify-content: space-between;
       align-items: center;
       transition-timing-function: ease-in-out;
-      transition: width 0.4s;
+      transition: width 400ms;
+    }
+    #top {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
     }
     #hide {
         width: 100%;
@@ -58,6 +284,9 @@
     }
     #bottom {
         width: 100%;
+        position: absolute;
+        bottom: 0;
+        right: 0;
     }
     #about {
         transition: width 0.6s, rotate 8s;
@@ -75,5 +304,12 @@
     .extend {
         width: 60% !important;
     }
-
+    a {
+        color: white;
+        text-decoration: none;
+        cursor: pointer;
+    }
+    a:hover {
+        text-decoration: underline;
+    } 
   </style>
