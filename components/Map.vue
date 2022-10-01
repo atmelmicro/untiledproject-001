@@ -127,7 +127,10 @@ function drawLayers() {
         );
 
 }
-
+Date.prototype.addHours= function(h){
+    this.setHours(this.getHours()+h);
+    return this;
+}
 export default {
     name: "Map",
   setup() {
@@ -214,6 +217,26 @@ export default {
       // Simple query that will update the 'hello' vue property
         thing: {
             query () {
+              if(timeStore.history) {
+                return gql`
+
+query ghd($timeStart: Int!, $timeEnd: Int!, $filter: Boolean!) {
+  GetHistoricalDataByTime(timeStart: $timeStart, timeEnd: $timeEnd, filer: $filter){
+    type
+    geometry{
+      type,
+      coordinates,
+    },
+    properties{
+      events{
+        type,
+        startTime
+      }
+    }
+  }
+}
+`
+              }
                 return gql`
 
                 query ghd($timeStart: Int!, $timeEnd: Int!, $filter: Boolean!) {
@@ -234,10 +257,14 @@ export default {
 }
       `
             }, update: async data => {
-              console.log(timeStore.od, timeStore.do, timeStore.filter)
+              let d 
+              if(timeStore.history) {
+                d = data.GetHistoricalDataByTime
+              } else { d = data.GetHourlyData }
+              console.log(d)
               if(firstDraw) {
-                reslv(data.GetHourlyData)
-                console.log(data.GetHourlyData)
+                reslv(d)
+                //console.log(d)
                 firstDraw = false
                 return
               }
@@ -249,16 +276,27 @@ export default {
           'type': 'geojson',
           'data': {
             "type": "FeatureCollection",
-            "features": data.GetHourlyData
+            "features": d
             }
           });
           drawLayers()
 
             }, variables () {
-              return {
-                timeStart: timeStore.od,
-                timeEnd: timeStore.do,
-                filter: timeStore.filter
+              if(!timeStore.history) {
+                return {
+                  timeStart: timeStore.od,
+                  timeEnd: timeStore.do,
+                  filter: timeStore.filter
+                }
+              } else {
+                console.log(
+                  Math.floor(timeStore.odDate.addHours(timeStore.do).getTime() / 1000),
+                  Math.floor(timeStore.doDate.addHours(timeStore.od).getTime() / 1000))
+                return {
+                  timeStart: Math.floor(timeStore.doDate.addHours(timeStore.od).getTime() / 1000),
+                  timeEnd:  Math.floor(timeStore.odDate.addHours(timeStore.do).getTime() / 1000),
+                  filter: timeStore.filter
+                }
               }
             }
         }

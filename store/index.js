@@ -15,5 +15,7 @@ export let timeStore = reactive({
     od: 0,
     do: 24,
     filter: false,
-    history: false
+    history: false,
+    odDate: new Date(),
+    doDate: new Date()
 })

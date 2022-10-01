@@ -40,7 +40,7 @@
                 <div v-else >
                     <div class="time-wrapper">
                         <h3>Od</h3>
-                        <input v-if="timeStore.history" type="date" min="2021-01-01" max="2021-12-31" class="date">
+                        <input id="od-date" v-if="timeStore.history" type="date" min="2021-01-01" max="2021-12-31" class="date" @input="getNewData" >
                         <div class="time" :class="odErrFunc()">
                             <h1>{{od}}:</h1>
                             <h2>00</h2>
@@ -49,7 +49,7 @@
                     <input type="range" class="time-slider" @input="(e) => {od = Number(e.target.value); }" @change="getNewData()" min="0" max="24" :value="od">
                     <div class="time-wrapper">
                         <h3>Do</h3>
-                        <input v-if="timeStore.history" type="date" min="2021-01-01" max="2021-12-31" class="date">
+                        <input v-if="timeStore.history" type="date" min="2021-01-01" max="2021-12-31" class="date" @input="getNewData" id="do-date" >
                         <div class="time" :class="odErrFunc()">
                             <h1>{{doh}}:</h1>
                             <h2>00</h2>
@@ -61,7 +61,7 @@
                         <span class="checkmark"></span>
                     </label>
                     <label class="container" >Historický režim
-                        <input type="checkbox" :checked="timeStore.history" @input="(e) => {timeStore.history = !timeStore.history}">
+                        <input type="checkbox" :checked="timeStore.history" @input="(e) => {timeStore.history = !timeStore.history;}">
                         <span class="checkmark"></span>
                     </label>
                 </div>
@@ -72,7 +72,7 @@
                 <button id="about" @click="bruh">
                 {{
                     Object.keys(state.resultOfSub).length === 0 && Object.keys(state.arr).length === 0 ?
-                    extend ? "Zavřit" : "Co to je?" :
+                    extend ? "Zavřít" : "O projektu" :
                     "Zavřít"
                     }}
             </button>
@@ -125,9 +125,15 @@ const zeroPad = (num) => {
             }
         },
         getNewData() {
+            if(timeStore.history) {
+                let doDate = document.getElementById("do-date")
+                let odDate = document.getElementById("od-date")
+                console.log(new Date(doDate.value), new Date(odDate.value))
+                timeStore.doDate = new Date(doDate.value)
+                timeStore.doDate = new Date(odDate.value)
+            }
             timeStore.do = this.doh
             timeStore.od = this.od
-            console.log(timeStore)
         },
         set(e) {
             this.time = e.target.value
