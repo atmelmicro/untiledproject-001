@@ -16,33 +16,13 @@ import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
 let map;
 let marker;
-import { state, coords } from "../store/index"
-
-export default {
-    name: "Map",
-  setup() {
-    onMounted(() => {
-      mapboxgl.accessToken =
-        "pk.eyJ1IjoibWlrZWhhbWlsdG9uMDAiLCJhIjoiNDVjS2puUSJ9.aLvWM5BnllUGJ0e6nwMSEg";
-      map = new mapboxgl.Map({
-        container: "map",
-        style: "mapbox://styles/mapbox/dark-v10",
-        center: [15.77659, 50.03075],
-        zoom: 13,
-      });
-      map.on('load', () => {
-        // TODO: Here we want to load a layer
-        // TODO: Here we want to load/setup the popup
-        map.addSource('earthquakes', {
-          'type': 'geojson',
-          'data': {
-            "type": "FeatureCollection",
-            "features": [
-              ]
-          }
-        });
-
-        map.addLayer({
+import { state, coords, timeStore } from "../store/index"
+let reslv
+let aaa
+const promise = new Promise((resolve, reject) => {reslv = resolve})
+let firstDraw = true
+function drawLayers() {
+  map.addLayer({
             'id': 'earthquakes-heat',
             'type': 'heatmap',
             'source': 'earthquakes',
@@ -94,10 +74,8 @@ export default {
                 'interpolate',
                 ['linear'],
                 ['zoom'],
-                0,
-                2,
-                13,
-                20
+                12, 6,
+                14, 15
               ],
               // Transition from heatmap to circle layer by zoom level
               'heatmap-opacity': [
@@ -147,19 +125,51 @@ export default {
           },
           'waterway-label'
         );
+
+}
+
+export default {
+    name: "Map",
+  setup() {
+    onMounted(() => {
+      mapboxgl.accessToken =
+        "pk.eyJ1IjoibWlrZWhhbWlsdG9uMDAiLCJhIjoiNDVjS2puUSJ9.aLvWM5BnllUGJ0e6nwMSEg";
+      map = new mapboxgl.Map({
+        container: "map",
+        style: "mapbox://styles/mapbox/dark-v10",
+        center: [15.77659, 50.03075],
+        zoom: 13,
+      });
+      map.on('load', async () => {
+        let r = await promise
+        aaa = map.addSource('earthquakes', {
+          'type': 'geojson',
+          'data': {
+            "type": "FeatureCollection",
+            "features": r
+            }
+          });
+          console.log(r)
+          drawLayers()
       });
 
       map.on("click", "earthquakes-point", (e) => {
+        let props = JSON.parse(e.features[0].properties.events)
+        console.log(props.startTime * 1000)
         new mapboxgl.Popup()
-        .setLngLat(e.features[0].geometry.coordinates)
-        .setHTML(`<div class="a"><p class="piss">Lorem ipsum ${2 + 3}</p></div>`)
-        .addTo(map);
+          .setLngLat(e.features[0].geometry.coordinates)
+          .setHTML(`<h3>${props.type.toUpperCase()}</h3><h2>${
+
+            new Date(props.startTime * 1000).toLocaleDateString("cs-CZ", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+
+          }</h2>`)
+          .addTo(map);
       })
       const geocoder = new MapboxGeocoder({
         accessToken: mapboxgl.accessToken,
         mapboxgl: mapboxgl,
         bbox: [15.74339523320742, 50.01445573223078, 15.832487162023604, 50.05970182805093],
-        proximity: { //[, ]
+        proximity: {
           longitude: 50.03075,
           latitude: 15.77659
         },
@@ -187,7 +197,6 @@ export default {
           }
           state.arr = finalarr
         })
-        //console.log(state)
       })
 
     });
@@ -196,6 +205,7 @@ export default {
   data () {
     return {
       coords,
+      timeStore,
       data: {},
       thing: []
     }
@@ -205,29 +215,51 @@ export default {
         thing: {
             query () {
                 return gql`
-      {
-        GetHistoricalDataByTime(timeStart: 1631782500, timeEnd: 1664603372) {
-            type
-            geometry {
-            type
-            coordinates
-            }
-            properties {
-            events {
-             type
-            startTime
+
+                query ghd($timeStart: Int!, $timeEnd: Int!, $filter: Boolean!) {
+  GetHourlyData(timeStart: $timeStart, timeEnd: $timeEnd, filer: $filter) {
+    type
+    geometry {
+      type
+      coordinates
+    }
+    properties {
+      events {
+        Id
+        type
+        startTime
       }
     }
   }
 }
-      
       `
-            }, update: data => {
-              data.GetHistoricalDataByTime
-              console.log(map)
-              console.log(map)
-              console.log(map)
-              console.log(map)
+            }, update: async data => {
+              console.log(timeStore.od, timeStore.do, timeStore.filter)
+              if(firstDraw) {
+                reslv(data.GetHourlyData)
+                console.log(data.GetHourlyData)
+                firstDraw = false
+                return
+              }
+              map.removeLayer("earthquakes-heat")
+              map.removeLayer("earthquakes-point")
+              map.removeSource("earthquakes")
+              
+              map.addSource('earthquakes', {
+          'type': 'geojson',
+          'data': {
+            "type": "FeatureCollection",
+            "features": data.GetHourlyData
+            }
+          });
+          drawLayers()
+
+            }, variables () {
+              return {
+                timeStart: timeStore.od,
+                timeEnd: timeStore.do,
+                filter: timeStore.filter
+              }
             }
         }
     },
@@ -285,9 +317,11 @@ export default {
   width: 100%;
 }
 
-.a {
-  width: 10rem;
+.mapboxgl-popup-content {
   height: 10rem;
+  width: 10rem;
+  display: flex;
+  flex-direction: column;
 }
 
 .mapboxgl-ctrl-geocoder {
@@ -328,7 +362,7 @@ export default {
     background-color: var(--bg-color1);
   }
   .mapboxgl-popup-tip {
-    border-top-color: var(--bg-color1) !important; 
+    filter: invert(1);
   }
   .mapboxgl-popup-close-button {
     filter: invert(1);

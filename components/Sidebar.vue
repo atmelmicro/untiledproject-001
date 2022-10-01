@@ -7,14 +7,12 @@
             </div>
                 <div v-if="Object.keys(state.resultOfSub).length !== 0" class="place">
                     <h1 id="place-name" class="place-text">{{state.resultOfSub.matching_place_name}}</h1>
-                    <h2 id="place-safety" class="place-text">v <span style="color: lightgreen">bezpečné zóně</span></h2>
                 </div>
 
                 <div id="places" v-else-if="Object.keys(state.arr).length !== 0">
                     <div style="margin-left: 1rem; margin-right: 1rem; margin-bottom: 4rem;">
                         <h1 class="place-text">{{state.result.text_cs}}</h1>
                         <h3 id="place-address" class="place-text">{{state.result.properties.address}}</h3>
-                        <h2 id="bezp-zona">Bezpečná zóna</h2>
                         <h3 id="zajimave">Zajímavé místa kolem</h3>
                         <div id="spacer"></div>
                         <div v-for="(i, index) in state.arr" v-if="i.description != 'Category'">
@@ -29,34 +27,43 @@
                     <div id="about-text">
                     <h1>Co je to PCEGuard?</h1>
                     <ul>
-                        <li>PCEGuard je webová aplikace pro větší bezpečnost cyklistů a chodců po Pardubicích</li>
+                        <li>PCEGuard je webová aplikace pro zvýšení bezpečnosti cyklistů a chodců po Pardubicích</li>
                     </ul>
                     <h1>Co umí?</h1>
                     <ul>
-                        <li>Pomocí vyfiltrování se Vám ukáže mapa s hitorií výskytů dopravních přestupků. Po rozkliknutí oblasti vyskočí deltailnějsí info</li>
+                        <li>Pomocí vyfiltrování Vám mapa ukáže historii výskytů dopravních přestupků. Pro více infa můžete přestupek rozkliknout</li>
                     </ul>
-                    <p><b>Vytvořili</b> : Diego Portillo, Matouš Wolf, David Menc, Matěj Tobiáš Moravec</p>
+                    <p><b>Vytvořili</b> : Diego Portillo, Matouš Volf, David Menc, Matěj Tobiáš Moravec</p>
                     <p>v rámci <a href="https://www.foxconn.cz/funovation22">Funovation Hac22</a></p>
                 </div>
                 </div>
                 <div v-else >
                     <div class="time-wrapper">
                         <h3>Od</h3>
-                        <input type="date" min="2021-01-01" max="2021-12-31" id="date">
+                        <input v-if="timeStore.history" type="date" min="2021-01-01" max="2021-12-31" class="date">
                         <div class="time" :class="odErrFunc()">
                             <h1>{{od}}:</h1>
                             <h2>00</h2>
                         </div>
                     </div>
-                    <input type="range" class="time-slider" @input="(e) => {od = Number(e.target.value)}" min="0" max="24" :value="od">
+                    <input type="range" class="time-slider" @input="(e) => {od = Number(e.target.value); }" @change="getNewData()" min="0" max="24" :value="od">
                     <div class="time-wrapper">
                         <h3>Do</h3>
+                        <input v-if="timeStore.history" type="date" min="2021-01-01" max="2021-12-31" class="date">
                         <div class="time" :class="odErrFunc()">
                             <h1>{{doh}}:</h1>
                             <h2>00</h2>
                         </div>
                     </div>
-                    <input type="range" class="time-slider" @input="(e) => {doh = Number(e.target.value)}" min="0" max="24" :value="doh">
+                    <input type="range" class="time-slider" @input="(e) => {doh = Number(e.target.value); }" @change="getNewData()" min="0" max="24" :value="doh">
+                    <label class="container">Filtrovat stání
+                        <input type="checkbox" :checked="timeStore.filter" @input="(e) => {timeStore.filter = !timeStore.filter}">
+                        <span class="checkmark"></span>
+                    </label>
+                    <label class="container" >Historický režim
+                        <input type="checkbox" :checked="timeStore.history" @input="(e) => {timeStore.history = !timeStore.history}">
+                        <span class="checkmark"></span>
+                    </label>
                 </div>
             </div>
                 
@@ -76,7 +83,7 @@
 
   <script>
     
-import { state, coords } from "../store/index"
+import { state, coords, timeStore } from "../store/index"
 import gql from 'graphql-tag'
 
 const zeroPad = (num) => {
@@ -94,10 +101,11 @@ const zeroPad = (num) => {
             doErr: false,
             odErr: false,
             od: 0,
-            doh: 0,
+            doh: 24,
             place: true,
             state,
-            coords
+            coords,
+            timeStore
         } 
     },
     methods: {
@@ -115,6 +123,11 @@ const zeroPad = (num) => {
                 let butt = document.getElementsByClassName("mapboxgl-ctrl-geocoder--button")[0]
                 butt.click()
             }
+        },
+        getNewData() {
+            timeStore.do = this.doh
+            timeStore.od = this.od
+            console.log(timeStore)
         },
         set(e) {
             this.time = e.target.value
@@ -139,15 +152,6 @@ const zeroPad = (num) => {
                     state.resultOfSub = json.features[0]
                 })
         } 
-    },
-    mounted () {        
-        let dateSelector = document.getElementById("date")
-        let date = new Date
-        console.log(date.getMonth())
-        date.setFullYear(2021)
-        let formattedDate = `${date.getFullYear()}-${zeroPad(date.getMonth() + 1)}-${zeroPad(date.getDate())}`
-        console.log(formattedDate)
-        //dateSelector.value = formattedDate
     }
   }
   </script>
@@ -157,12 +161,8 @@ const zeroPad = (num) => {
     text-align: center;
     
 }
-#about-text ul li {
-    color: red;
-    word-wrap: normal;
-}
     .extendedLogo {
-        width: 30% !important;
+        width: 55% !important;
     }
 
     #sidebar-logo-div {
@@ -172,7 +172,8 @@ const zeroPad = (num) => {
     }
     #sidebar-logo {
         width: 70%;
-        transition: width 400ms;
+        transition: width 0ms;
+        margin-bottom: 1rem;
     }
     #place-name {
         font-size: 2rem;
@@ -187,10 +188,6 @@ const zeroPad = (num) => {
     #zajimave {
         font-weight: 500;
     }
-    #bezp-zona {
-        font-weight: 500;
-        color: #C5FFB0;
-    }  
     .places-name {
         margin-top: 1rem !important;
         font-weight: 500 !important;
@@ -220,7 +217,7 @@ const zeroPad = (num) => {
     #place-safety {
         padding-top: 1rem;
     }
-    #date {
+    .date {
         background-color: rgba(0, 0, 0, 0);
         outline: none;
         color: white;
@@ -297,7 +294,7 @@ const zeroPad = (num) => {
       justify-content: space-between;
       align-items: center;
       transition-timing-function: ease-in-out;
-      transition: width 400ms, margin 400ms;
+      transition: width 150ms, margin 150ms;
     }
     #top {
         display: flex;
@@ -337,6 +334,7 @@ const zeroPad = (num) => {
     }
     .extend {
         width: 60% !important;
+        padding-right: 1rem;
     }
     a {
         color: white;
@@ -346,4 +344,73 @@ const zeroPad = (num) => {
     a:hover {
         text-decoration: underline;
     } 
+    .container {
+  display: block;
+  position: relative;
+  padding-left: 35px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  font-size: 22px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  margin-top: 1rem;
+  margin-left: 1rem;
+}
+
+/* Hide the browser's default checkbox */
+.container input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+/* Create a custom checkbox */
+.checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 25px;
+  width: 25px;
+  background-color: rgb(65, 65, 65);
+}
+
+/* On mouse-over, add a grey background color */
+.container:hover input ~ .checkmark {
+  background-color: rgb(65, 65, 65);
+}
+
+/* When the checkbox is checked, add a blue background */
+.container input:checked ~ .checkmark {
+  background-color: #0020c3;
+}
+
+/* Create the checkmark/indicator (hidden when not checked) */
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+/* Show the checkmark when checked */
+.container input:checked ~ .checkmark:after {
+  display: block;
+}
+
+/* Style the checkmark/indicator */
+.container .checkmark:after {
+  left: 9px;
+  top: 5px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 3px 3px 0;
+  -webkit-transform: rotate(45deg);
+  -ms-transform: rotate(45deg);
+  transform: rotate(45deg);
+}
+
   </style>

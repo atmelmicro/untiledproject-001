@@ -10,3 +10,10 @@ export let state = reactive({
 export let coords = reactive({
     coord: []
 })
+
+export let timeStore = reactive({
+    od: 0,
+    do: 24,
+    filter: false,
+    history: false
+})
