@@ -1,8 +1,10 @@
-<!-- Please remove this file from your project -->
 <template>
     <div id="sidebar" :class="{extend: extend}">
-        <div id="top">
-            <h2 id="name">PCEGuard</h2>
+        <div id="top" class="apollo">
+            <p>{{a}}</p>
+            <div id="sidebar-logo-div">
+                <img src="inline.png" alt="logo" id="sidebar-logo" :class="{extendedLogo: extend}">
+            </div>
                 <div v-if="Object.keys(state.resultOfSub).length !== 0" class="place">
                     <h1 id="place-name" class="place-text">{{state.resultOfSub.matching_place_name}}</h1>
                     <h2 id="place-safety" class="place-text">v <span style="color: lightgreen">bezpečné zóně</span></h2>
@@ -24,10 +26,18 @@
                     
             <div v-else>
                 <div v-if="extend" id="about-div">
-                    <h1>ffsdfs</h1>
-                    <p>AAAAAAAGDGHFQWPGHQ29GHQ9G</p>
-                    <h1>dsfhouahoigfqoiětnoě</h1>
-                    <p>hoiušrtěbvtěuibšbilufebiufwhiouefrbuiefwbiufwebiuwegiublefwb</p>
+                    <div id="about-text">
+                    <h1>Co je to PCEGuard?</h1>
+                    <ul>
+                        <li>PCEGuard je webová aplikace pro větší bezpečnost cyklistů a chodců po Pardubicích</li>
+                    </ul>
+                    <h1>Co umí?</h1>
+                    <ul>
+                        <li>Pomocí vyfiltrování se Vám ukáže mapa s hitorií výskytů dopravních přestupků. Po rozkliknutí oblasti vyskočí deltailnějsí info</li>
+                    </ul>
+                    <p><b>Vytvořili</b> : Diego Portillo, Matouš Wolf, David Menc, Matěj Tobiáš Moravec</p>
+                    <p>v rámci <a href="https://www.foxconn.cz/funovation22">Funovation Hac22</a></p>
+                </div>
                 </div>
                 <div v-else >
                     <div class="time-wrapper">
@@ -65,8 +75,10 @@
   
 
   <script>
-import { onMounted } from 'vue';
+    
 import { state, coords } from "../store/index"
+import gql from 'graphql-tag'
+
 const zeroPad = (num) => {
         if(num < 10 ) {
             return String(num).padStart(2, '0')
@@ -141,6 +153,27 @@ const zeroPad = (num) => {
   </script>
   
   <style>
+#about-text p {
+    text-align: center;
+    
+}
+#about-text ul li {
+    color: red;
+    word-wrap: normal;
+}
+    .extendedLogo {
+        width: 30% !important;
+    }
+
+    #sidebar-logo-div {
+        margin-top: 1.5rem;
+        display: flex;
+        justify-content: center;
+    }
+    #sidebar-logo {
+        width: 70%;
+        transition: width 400ms;
+    }
     #place-name {
         font-size: 2rem;
     }
@@ -217,6 +250,7 @@ const zeroPad = (num) => {
     }
     #about-div {
         margin-left: 1rem;
+        overflow: hidden;
     }
     .time-slider {
         appearance: none;
@@ -263,7 +297,7 @@ const zeroPad = (num) => {
       justify-content: space-between;
       align-items: center;
       transition-timing-function: ease-in-out;
-      transition: width 400ms;
+      transition: width 400ms, margin 400ms;
     }
     #top {
         display: flex;

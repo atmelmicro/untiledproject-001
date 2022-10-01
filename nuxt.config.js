@@ -35,12 +35,15 @@ export default {
 
   // Modules: https://go.nuxtjs.dev/config-modules
   modules: [
-    ['nuxt-gmaps', {
-      key: 'AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg',
-      //you can use libraries: ['places']
-    }]
+    '@nuxtjs/apollo',
   ],
-
+  apollo: {
+    clientConfigs: {
+      default: {
+        httpEndpoint: 'http://localhost:8080/query', // /query
+      }
+    }
+  },
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {
   }

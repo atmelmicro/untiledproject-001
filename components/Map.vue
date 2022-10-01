@@ -4,6 +4,7 @@
 
 <script>
 import mapboxgl from "mapbox-gl";
+  import gql from 'graphql-tag'
 import "mapbox-gl/dist/mapbox-gl.css";
 //import { useCounterStore } from '../stores/mapdata'
 import {
@@ -16,7 +17,7 @@ import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
 let map;
 let marker;
 import { state, coords } from "../store/index"
-import { off } from "process";
+
 export default {
     name: "Map",
   setup() {
@@ -36,18 +37,8 @@ export default {
           'type': 'geojson',
           'data': {
             "type": "FeatureCollection",
-            "features": [{
-              "geometry": {
-                "type": "Point",
-                "coordinates": [
-                  15.77659, 50.03075
-                ]
-              },
-              "type": "Feature",
-              "properties": {
-                "description": "Southern Ave",
-              }
-            }, ]
+            "features": [
+              ]
           }
         });
 
@@ -161,7 +152,7 @@ export default {
       map.on("click", "earthquakes-point", (e) => {
         new mapboxgl.Popup()
         .setLngLat(e.features[0].geometry.coordinates)
-        .setHTML(`<div class="a"></div>`)
+        .setHTML(`<div class="a"><p class="piss">Lorem ipsum ${2 + 3}</p></div>`)
         .addTo(map);
       })
       const geocoder = new MapboxGeocoder({
@@ -204,9 +195,42 @@ export default {
   },
   data () {
     return {
-      coords
+      coords,
+      data: {},
+      thing: []
     }
   },
+  apollo: {
+      // Simple query that will update the 'hello' vue property
+        thing: {
+            query () {
+                return gql`
+      {
+        GetHistoricalDataByTime(timeStart: 1631782500, timeEnd: 1664603372) {
+            type
+            geometry {
+            type
+            coordinates
+            }
+            properties {
+            events {
+             type
+            startTime
+      }
+    }
+  }
+}
+      
+      `
+            }, update: data => {
+              data.GetHistoricalDataByTime
+              console.log(map)
+              console.log(map)
+              console.log(map)
+              console.log(map)
+            }
+        }
+    },
   watch: {
     coords: {
       handler(newValue, oldValue) {
@@ -279,4 +303,41 @@ export default {
     fill: black
     ;
 } 
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+/* Track */
+::-webkit-scrollbar-track {
+  background: var(--bg-color1);
+}
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #2c2c2b;
+}
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #2c2c2b;
+}
+  :root {
+    --bg-color1: #060606; /* 78% blur 5.5px */
+  }
+  
+
+  .mapboxgl-popup-content{
+    background-color: var(--bg-color1);
+  }
+  .mapboxgl-popup-tip {
+    border-top-color: var(--bg-color1) !important; 
+  }
+  .mapboxgl-popup-close-button {
+    filter: invert(1);
+   }
+  .piss {
+    color: #fff;
+    font-family: 'Montserrat', sans-serif;
+    font-size: x-large;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
 </style>
